@@ -1,0 +1,35 @@
+{
+  "C_Cpp.intelliSenseEngine": "default",
+  "idf.espIdfPath": "/home/sora/esp/esp-idf",
+  "idf.pythonInstallPath": "/home/sora/anaconda3/bin/python",
+  "idf.openOcdConfigs": [
+    "board/esp32-wrover-kit-3.3v.cfg"
+  ],
+  "idf.port": "/dev/ttyUSB0",
+  "idf.toolsPath": "/home/sora/.espressif",
+  "idf.customExtraVars": {
+    "IDF_TARGET": "esp32"
+  },
+  "idf.flashType": "UART",
+  "files.associations": {
+    "esp_netif.h": "c",
+    "stdint.h": "c",
+    "i2c.h": "c",
+    "adc_oneshot.h": "c",
+    "array": "c",
+    "string": "c",
+    "string_view": "c",
+    "span": "c",
+    "iterator": "c",
+    "vector": "c",
+    "adc_cali.h": "c",
+    "mq2.h": "c",
+    "device.h": "c"
+  },
+  "clangd.path": "/home/sora/.espressif/tools/esp-clang/esp-18.1.2_20240912/esp-clang/bin/clangd",
+  "clangd.arguments": [
+    "--background-index",
+    "--query-driver=/home/sora/.espressif/tools/xtensa-esp-elf/esp-14.2.0_20241119/xtensa-esp-elf/bin/xtensa-esp32-elf-gcc",
+    "--compile-commands-dir=/home/sora/CProj/Esp/demo/build"
+  ]
+}
