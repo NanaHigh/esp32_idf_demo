@@ -2,6 +2,7 @@
 // Date: 2025-06-23
 
 #include "device.h"
+#include "esp_timer.h"
 #include "icm42688.h"
 #include "bh1750.h"
 #include "bmp280.h"
@@ -15,7 +16,6 @@ static esp_mqtt_client_handle_t mqtt_client = NULL;
 
 static void mqtt5_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data) {
     ESP_LOGD(TAG, "Event dispatched from event loop base=%s, event_id=%" PRIi32, base, event_id);
-    esp_mqtt_event_handle_t event = event_data;
     switch ((esp_mqtt_event_id_t)event_id) {
     case MQTT_EVENT_CONNECTED:
         ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED");
@@ -95,7 +95,6 @@ static adc_cali_handle_t cali_handle = NULL;
 
 static void adc_calibration_init(void)
 {
-    adc_cali_scheme_ver_t cali_scheme = ADC_CALI_SCHEME_VER_LINE_FITTING;
     adc_cali_line_fitting_config_t cali_config = {
         .unit_id = ADC_UNIT_1,
         .atten = ADC_ATTEN_DB_12,
@@ -123,9 +122,11 @@ void mq2_task(void *pvParameters)
         return;
     }
     while (1) {
-        sprintf(buf, "Mq 2 raw data: %ld", read_mq2_status());
-        int msg_id = esp_mqtt_client_publish(mqtt_client, "/sensor/mq_2", buf, 0, 0, 0);
-        ESP_LOGI(TAG, "MQ2 sent publish successful, msg_id=%d", msg_id);
+        uint64_t timestamp = esp_timer_get_time() / 1000;
+        uint32_t mq2_data = read_mq2_status();
+        sprintf(buf, "{\"timestamp\":%llu,\"mq2_raw_data\":%ld}", timestamp, mq2_data);
+        int msg_id = esp_mqtt_client_publish(mqtt_client, "/sensor/mq2", buf, 0, 0, 0);
+        ESP_LOGI(TAG, "MQ2 JSON sent publish successful, msg_id=%d", msg_id);
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 }
@@ -140,9 +141,11 @@ void gray_task(void *pvParameters)
         return;
     }
     while (1) {
-        sprintf(buf, "Gray raw data: %ld", read_gray_status());
+        uint64_t timestamp = esp_timer_get_time() / 1000;
+        uint32_t gray_data = read_gray_status();
+        sprintf(buf, "{\"timestamp\":%llu,\"gray_raw_data\":%ld}", timestamp, gray_data);
         int msg_id = esp_mqtt_client_publish(mqtt_client, "/sensor/gray", buf, 0, 0, 0);
-        ESP_LOGI(TAG, "Gray sent publish successful, msg_id=%d", msg_id);
+        ESP_LOGI(TAG, "Gray JSON sent publish successful, msg_id=%d", msg_id);
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 }
@@ -157,9 +160,11 @@ void radar_task(void *pvParameters)
         return;
     }
     while (1) {
-        sprintf(buf, "Radar status: %s", read_radar_status() ? "somebody is moving" : "nobody is moving");
+        uint64_t timestamp = esp_timer_get_time() / 1000;
+        bool radar_status = read_radar_status();
+        sprintf(buf, "{\"timestamp\":%llu,\"radar_status\":\"%s\"}", timestamp, radar_status ? "HIGH" : "LOW");
         int msg_id = esp_mqtt_client_publish(mqtt_client, "/sensor/radar", buf, 0, 0, 0);
-        ESP_LOGI(TAG, "Radar sent publish successful, msg_id=%d", msg_id);
+        ESP_LOGI(TAG, "Radar JSON sent publish successful, msg_id=%d", msg_id);
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 }
@@ -175,11 +180,12 @@ void icm42688_task(void *pvParameters)
     }
     float temp[1], acc[3], gyro[3];
     while (1) {
+        uint64_t timestamp = esp_timer_get_time() / 1000;
         icm42688_read_data(temp, acc, gyro);
-        sprintf(buf, "ICM42688 Temp: %.2f°C, Acc: (%.2f, %.2f, %.2f), Gyro: (%.2f, %.2f, %.2f)", 
-                temp[0], acc[0], acc[1], acc[2], gyro[0], gyro[1], gyro[2]);
+        sprintf(buf, "{\"timestamp\":%llu,\"temperature\":%.2f,\"acceleration\":{\"x\":%.2f,\"y\":%.2f,\"z\":%.2f},\"gyroscope\":{\"x\":%.2f,\"y\":%.2f,\"z\":%.2f}}",
+                timestamp, temp[0], acc[0], acc[1], acc[2], gyro[0], gyro[1], gyro[2]);
         int msg_id = esp_mqtt_client_publish(mqtt_client, "/sensor/icm42688", buf, 0, 0, 0);
-        ESP_LOGI(TAG, "ICM42688 sent publish successful, msg_id=%d", msg_id);
+        ESP_LOGI(TAG, "ICM42688 JSON sent publish successful, msg_id=%d", msg_id);
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 }
@@ -194,10 +200,11 @@ void bh1750_task(void *pvParameters)
         return;
     }
     while (1) {
+        uint64_t timestamp = esp_timer_get_time() / 1000;
         float lux = bh1750_read_light();
-        sprintf(buf, "BH1750 Light Intensity: %.2f lux", lux);
+        sprintf(buf, "{\"timestamp\":%llu,\"light_intensity\":%.2f}", timestamp, lux);
         int msg_id = esp_mqtt_client_publish(mqtt_client, "/sensor/bh1750", buf, 0, 0, 0);
-        ESP_LOGI(TAG, "BH1750 sent publish successful, msg_id=%d", msg_id);
+        ESP_LOGI(TAG, "BH1750 JSON sent publish successful, msg_id=%d", msg_id);
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 }
@@ -213,10 +220,11 @@ void bmp280_task(void *pvParameters)
     }
     float bmp_temp, bmp_press;
     while (1) {
+        uint64_t timestamp = esp_timer_get_time() / 1000;
         bmp280_read_data(&bmp_temp, &bmp_press);
-        sprintf(buf, "BMP280 Temp: %.2f°C, Pressure: %.2f hPa", bmp_temp, bmp_press);
+        sprintf(buf, "{\"timestamp\":%llu,\"temperature\":%.2f,\"pressure\":%.2f}", timestamp, bmp_temp, bmp_press);
         int msg_id = esp_mqtt_client_publish(mqtt_client, "/sensor/bmp280", buf, 0, 0, 0);
-        ESP_LOGI(TAG, "BMP280 sent publish successful, msg_id=%d", msg_id);
+        ESP_LOGI(TAG, "BMP280 JSON sent publish successful, msg_id=%d", msg_id);
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 }
