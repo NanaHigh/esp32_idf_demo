@@ -24,7 +24,8 @@
     "vector": "c",
     "adc_cali.h": "c",
     "mq2.h": "c",
-    "device.h": "c"
+    "device.h": "c",
+    "bh1750.h": "c"
   },
   "clangd.path": "/home/sora/.espressif/tools/esp-clang/esp-18.1.2_20240912/esp-clang/bin/clangd",
   "clangd.arguments": [

@@ -1,3 +1,6 @@
+// Author: Chongbing Yu <bd8ejk@foxmail.com>
+// Date: 2025-06-23
+
 #include "device.h"
 #include "icm42688.h"
 #include "bh1750.h"
@@ -24,7 +27,7 @@ static void mqtt5_event_handler(void *handler_args, esp_event_base_t base, int32
         ESP_LOGI(TAG, "MQTT_EVENT_ERROR");
         break;
     default:
-        ESP_LOGI(TAG, "Other event id:%" PRIi32, event_id); // 使用 PRIi32 格式化 int32_t 类型
+        ESP_LOGI(TAG, "Other event id:%" PRIi32, event_id); // Using PRIi32 to format int32_t type
         break;
     }
 }

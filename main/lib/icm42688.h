@@ -1,3 +1,6 @@
+// Author: Chongbing Yu <bd8ejk@foxmail.com>
+// Date: 2025-06-23
+
 #ifndef ICM42688_H
 #define ICM42688_H
 
